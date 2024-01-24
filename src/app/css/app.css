@@ -9,6 +9,8 @@ table.shard-map { table-layout: fixed; }
 
 .disabled { opacity: 0.2; }
 
+.alias-index { color:#eebd1d; }
+
 /** navbar **/
 .navbar-red { border-bottom: 5px solid #E64759 !important; }
 .navbar-yellow { border-bottom: 5px solid #E4D836 !important; }
