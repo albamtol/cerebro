@@ -10,6 +10,8 @@ table.shard-map { table-layout: fixed; }
 .disabled { opacity: 0.2; }
 
 .alias-index { color:#eebd1d; }
+.index-summary-table { width: 100%; }
+table.shard-map .index-summary-table td{ padding: 0.1rem !important; }
 
 /** navbar **/
 .navbar-red { border-bottom: 5px solid #E64759 !important; }

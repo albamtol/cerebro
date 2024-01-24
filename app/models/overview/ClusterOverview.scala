@@ -6,8 +6,8 @@ object ClusterOverview {
 
   def apply(clusterState: JsValue, nodesStats: JsValue, indicesStats: JsValue,
             clusterSettings: JsValue, aliases: JsValue, clusterHealth: JsValue,
-            nodesInfo: JsValue): JsValue = {
-    val indices = buildIndices(clusterState, indicesStats, aliases)
+            nodesInfo: JsValue, indicesSettings: JsValue): JsValue = {
+    val indices = buildIndices(clusterState, indicesStats, aliases, indicesSettings)
 
     val masterNodeId = (clusterState \ "master_node").as[String]
 
@@ -46,17 +46,19 @@ object ClusterOverview {
       }.toSeq
     )
 
-  def buildIndices(clusterState: JsValue, indicesStats: JsValue, aliases: JsValue): Seq[JsValue] = {
+  def buildIndices(clusterState: JsValue, indicesStats: JsValue, aliases: JsValue, indicesSettings: JsValue): Seq[JsValue] = {
     val routingTable = (clusterState \ "routing_table" \ "indices").as[JsObject].value
     val blocks = (clusterState \ "blocks" \ "indices").asOpt[JsObject].getOrElse(Json.obj())
     val stats = (indicesStats \ "indices").asOpt[JsObject].getOrElse(Json.obj())
+    val settings = indicesSettings.asOpt[JsObject].getOrElse(Json.obj())
     val indices = routingTable.map { case (index, shards) =>
       // Since stats and blocks are JsObject objects potentially big, it's checked that key exists in that object.
       // This way, it avoids building a JsUndefined instance with a big string as explained in #467
       val indexStats = if (stats.value contains index) (stats \ index).asOpt[JsObject].getOrElse(Json.obj()) else Json.obj()
       val indexBlock = if (blocks.value contains index ) (blocks \ index).asOpt[JsObject].getOrElse(Json.obj()) else Json.obj()
       val indexAliases = (aliases \ index \ "aliases").asOpt[JsObject].getOrElse(Json.obj()) // 1.4 < does not return aliases obj
-      Index(index, indexStats, shards, indexAliases, indexBlock)
+      val indexSettings = if( settings.value contains index) (settings \ index).asOpt[JsObject].getOrElse(Json.obj()) else Json.obj()
+      Index(index, indexStats, shards, indexAliases, indexBlock, indexSettings)
     }.toSeq
 
     val closedIndices = blocks.value.collect { // ES < 7.X does not return routing_table for closed indices

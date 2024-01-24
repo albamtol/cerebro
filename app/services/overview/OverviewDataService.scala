@@ -16,11 +16,12 @@ class OverviewDataService @Inject()(client: ElasticClient) {
     val apis = Seq(
       "_cluster/state/master_node,routing_table,blocks",
       "_nodes/stats/jvm,fs,os,process?human=true",
-      "_stats/docs,store?ignore_unavailable=true",
+      "_stats/docs,store,segments?ignore_unavailable=true",
       "_cluster/settings",
       "_aliases",
       "_cluster/health",
-      s"_nodes/_all/os,jvm?human=true"
+      s"_nodes/_all/os,jvm?human=true",
+      "_settings?filter_path=*.settings.index.creation_date"
     )
     Future.sequence(apis.map(client.executeRequest("GET", _, None, target))).map { responses =>
       responses.zipWithIndex.find(_._1.isInstanceOf[Error]) match {
@@ -35,7 +36,8 @@ class OverviewDataService @Inject()(client: ElasticClient) {
             responses(3).body, // cluster settings
             responses(4).body, // aliases
             responses(5).body, // cluster health
-            responses(6).body  // nodes
+            responses(6).body,  // nodes
+            responses(7).body,  // index settings
           )
       }
     }

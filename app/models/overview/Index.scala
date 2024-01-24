@@ -4,7 +4,7 @@ import play.api.libs.json._
 
 object Index {
 
-  def apply(name: String, stats: JsValue, routingTable: JsValue, aliases: JsValue, indexBlock: JsObject): JsValue = {
+  def apply(name: String, stats: JsValue, routingTable: JsValue, aliases: JsValue, indexBlock: JsObject, settings: JsValue): JsValue = {
     val shardMap = createShardMap(routingTable)
 
     JsObject(Seq(
@@ -19,7 +19,9 @@ object Index {
       "aliases" -> JsArray(aliases.as[JsObject].keys.map(JsString(_)).toSeq), // 1.4 < does not return aliases obj
       "num_shards" -> JsNumber((routingTable \ "shards").as[JsObject].keys.map(_.toInt).max + 1),
       "num_replicas" -> JsNumber((routingTable \ "shards" \ "0").as[JsArray].value.size - 1),
-      "shards" -> JsObject(shardMap)
+      "shards" -> JsObject(shardMap),
+      "segments_count" -> (stats \ "total" \ "segments" \ "count").asOpt[JsNumber].getOrElse(JsNumber(0)),
+      "creation_date" -> (settings \ "settings" \ "index" \ "creation_date").asOpt[JsString].getOrElse(JsString("0")),
     ))
   }
 
